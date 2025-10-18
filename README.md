@@ -408,7 +408,7 @@ esac
 
 ### Prerequisites
 
-- Go 1.21 or later
+- Go 1.24 or later
 - golangci-lint (for linting)
 - Make (optional, for convenience commands)
 
