@@ -1,0 +1,52 @@
+# Multi-VLAN pfSense DHCP Static Mapping Updater Configuration
+# For environments with multiple VLAN-tagged interfaces
+
+pfsense:
+  # pfSense API endpoint
+  endpoint: "https://pfsense.example.com"
+  
+  # API key - STRONGLY recommend using environment variable
+  api_key: "${PFSENSE_API_KEY}"
+  
+  # Base physical interface name
+  # Tool automatically constructs VLAN interface names: em0.10, em0.20, etc.
+  base_interface: "em0"
+  
+  # TLS verification (disable only for testing with self-signed certs)
+  insecure_skip_verify: false
+  
+  # Optional: Manual interface mapping (overrides auto-discovery)
+  # Use if pfSense has non-standard logical interface names
+  # interface_mapping:
+  #   "em0": "lan"       # Base interface
+  #   "em0.10": "opt1"   # VLAN 10
+  #   "em0.20": "opt2"   # VLAN 20
+  #   "em0.30": "opt3"   # VLAN 30
+
+# IP ranges for each VLAN
+# If not specified, tool uses full interface netmask range minus exclusions
+vlan_ip_ranges:
+  0:   # Base interface (untagged, VLAN 0)
+    - "10.0.0.100-10.0.0.200"
+    
+  10:  # VLAN 10 (Management)
+    - "10.0.10.50-10.0.10.150"
+    
+  20:  # VLAN 20 (Servers)
+    - "10.0.20.0/24"         # CIDR notation supported
+    
+  30:  # VLAN 30 (Storage)
+    - "10.0.30.100-10.0.30.200"
+    
+  101: # VLAN 101 (DMZ)
+    - "192.168.101.10-192.168.101.250"
+
+# Optional: Custom timeouts for slower networks
+timeouts:
+  api_request: 10s      # Increase if pfSense is slow to respond
+  total_execution: 30s
+
+# Optional: Logging
+logging:
+  level: "INFO"
+  format: "text"

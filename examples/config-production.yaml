@@ -1,0 +1,49 @@
+# Production pfSense DHCP Configuration
+# Best practices for production deployments
+
+pfsense:
+  # Use HTTPS with valid certificate
+  endpoint: "https://pfsense.example.com"
+  
+  # ALWAYS use environment variable for API key
+  api_key: "${PFSENSE_API_KEY}"
+  
+  # Physical interface name
+  base_interface: "em0"
+  
+  # MUST be false in production (TLS verification required)
+  insecure_skip_verify: false
+
+# Define IP ranges explicitly to prevent accidents
+# Exclude gateway, DNS, and reserved IPs
+vlan_ip_ranges:
+  0:   # Management VLAN
+    - "10.0.0.100-10.0.0.250"   # Reserve .1-.99 for infrastructure
+    
+  10:  # Application Servers
+    - "10.0.10.100-10.0.10.250"
+    
+  20:  # Database Servers
+    - "10.0.20.100-10.0.20.250"
+    
+  30:  # Storage Network
+    - "10.0.30.100-10.0.30.250"
+
+# Production timeouts
+timeouts:
+  api_request: 5s       # Fast fail for network issues
+  total_execution: 15s  # Prevent hung processes
+
+# Production logging
+logging:
+  level: "INFO"         # ERROR, WARN, INFO (not DEBUG in prod)
+  format: "json"        # Structured logging for log aggregation
+
+# Security Notes:
+# 1. File permissions: chmod 600 config.yaml (see CheckConfigPermissions)
+# 2. Use environment variables for API keys
+# 3. Enable TLS verification (insecure_skip_verify: false)
+# 4. Restrict IP ranges to prevent conflicts
+# 5. Set reasonable timeouts
+# 6. Use INFO/WARN logging (not DEBUG) to avoid sensitive data leaks
+# 7. Monitor audit trail logs for compliance (SEC-008)

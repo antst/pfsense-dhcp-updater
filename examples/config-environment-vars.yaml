@@ -1,0 +1,39 @@
+# Environment Variable Configuration Example
+# ALL sensitive values can be loaded from environment variables
+# This is the RECOMMENDED approach for production deployments
+
+pfsense:
+  # Load from PFSENSE_ENDPOINT environment variable
+  endpoint: "${PFSENSE_ENDPOINT}"
+  
+  # Load from PFSENSE_API_KEY environment variable
+  api_key: "${PFSENSE_API_KEY}"
+  
+  # Load from PFSENSE_BASE_INTERFACE environment variable
+  # Or hardcode if it doesn't change
+  base_interface: "${PFSENSE_BASE_INTERFACE:-em0}"  # Default: em0
+  
+  # Load from PFSENSE_INSECURE environment variable
+  insecure_skip_verify: false
+
+# IP ranges can still be in config file (not sensitive)
+vlan_ip_ranges:
+  0:
+    - "${VLAN0_IP_RANGE:-10.0.0.100-10.0.0.200}"
+  10:
+    - "${VLAN10_IP_RANGE:-10.0.10.50-10.0.10.150}"
+
+logging:
+  level: "${LOG_LEVEL:-INFO}"
+  format: "${LOG_FORMAT:-text}"
+
+# Example /etc/environment or ~/.bashrc entries:
+#
+# export PFSENSE_ENDPOINT="https://pfsense.example.com"
+# export PFSENSE_API_KEY="your-api-key-here"
+# export PFSENSE_BASE_INTERFACE="em0"
+# export LOG_LEVEL="INFO"
+#
+# Proxmox system-wide (recommended):
+# echo 'PFSENSE_API_KEY="your-key"' | sudo tee -a /etc/environment
+# echo 'PFSENSE_ENDPOINT="https://pfsense.local"' | sudo tee -a /etc/environment

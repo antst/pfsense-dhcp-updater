@@ -1,0 +1,129 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.1'
+
+      - name: Run tests
+        run: go test -v ./...
+
+      - name: Build static binary
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          COMMIT=$(git rev-parse --short HEAD)
+          BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+            -ldflags="-s -w \
+            -X 'main.Version=${VERSION}' \
+            -X 'main.Commit=${COMMIT}' \
+            -X 'main.BuildDate=${BUILD_DATE}'" \
+            -o pfsense-dhcp-updater-linux-amd64 \
+            ./cmd/pfsense-dhcp-updater
+
+      - name: Verify binary
+        run: |
+          ls -lh pfsense-dhcp-updater-linux-amd64
+          file pfsense-dhcp-updater-linux-amd64
+          
+          # Verify binary size
+          SIZE=$(stat -c%s pfsense-dhcp-updater-linux-amd64)
+          if [ $SIZE -gt 10485760 ]; then
+            echo "ERROR: Binary size $SIZE bytes exceeds 10MB limit"
+            exit 1
+          fi
+          echo "Binary size: $(echo "scale=1; $SIZE/1048576" | bc)MB (OK)"
+
+      - name: Generate checksums
+        run: |
+          sha256sum pfsense-dhcp-updater-linux-amd64 > checksums.txt
+          cat checksums.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            pfsense-dhcp-updater-linux-amd64
+            checksums.txt
+          body: |
+            # pfSense DHCP Static Mapping Updater ${{ github.ref_name }}
+            
+            ## Features
+            
+            - ✅ Create new DHCP static mappings with auto-IP assignment
+            - ✅ Update hostname for existing mappings (VM rename)
+            - ✅ Delete mappings by MAC or hostname (VM decommission)
+            - ✅ Hostname conflict detection
+            - ✅ Idempotent operations (safe concurrent/repeated execution)
+            - ✅ Multi-VLAN support with validation
+            - ✅ Dry-run mode for all operations
+            - ✅ JSON and human-readable output
+            - ✅ Comprehensive error handling with actionable messages
+            
+            ## Installation
+            
+            ```bash
+            # Download binary
+            wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/pfsense-dhcp-updater-linux-amd64
+            
+            # Verify checksum
+            wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/checksums.txt
+            sha256sum -c checksums.txt
+            
+            # Install
+            sudo mv pfsense-dhcp-updater-linux-amd64 /usr/local/bin/pfsense-dhcp-updater
+            sudo chmod +x /usr/local/bin/pfsense-dhcp-updater
+            
+            # Verify
+            pfsense-dhcp-updater --version
+            ```
+            
+            ## Quick Start
+            
+            ```bash
+            # Create mapping
+            pfsense-dhcp-updater 00:11:22:33:44:55 web-server-01 10
+            
+            # Delete mapping
+            pfsense-dhcp-updater --delete --mac 00:11:22:33:44:55
+            
+            # Test without changes
+            pfsense-dhcp-updater --dry-run 00:11:22:33:44:55 test-vm 10
+            ```
+            
+            ## Documentation
+            
+            - [README](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/README.md)
+            - [Quickstart Guide](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/specs/001-pfsense-dhcp-updater/quickstart.md)
+            - [Configuration Examples](https://github.com/${{ github.repository }}/tree/${{ github.ref_name }}/examples)
+            - [CHANGELOG](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/CHANGELOG.md)
+            
+            ## Checksums
+            
+            ```
+            $(cat checksums.txt)
+            ```
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

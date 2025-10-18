@@ -1,0 +1,35 @@
+# Basic pfSense DHCP Static Mapping Updater Configuration
+# For single interface (base interface only, no VLANs)
+
+pfsense:
+  # pfSense API endpoint
+  endpoint: "https://pfsense.example.com"
+  
+  # API key - use environment variable for security
+  api_key: "${PFSENSE_API_KEY}"
+  
+  # Base physical interface name (check Interfaces → Assignments in pfSense)
+  # Common names: em0, igb0, vtnet0, iavf1, ixgbe0
+  base_interface: "em0"
+  
+  # TLS certificate verification
+  # Set to true for self-signed certificates (testing only)
+  insecure_skip_verify: false
+
+# IP range for base interface (VLAN 0)
+# Tool will assign IPs from this range for new mappings
+vlan_ip_ranges:
+  0:  # Base interface (no VLAN tag)
+    - "10.0.0.100-10.0.0.200"  # Range notation
+    # OR use CIDR notation:
+    # - "10.0.0.0/24"
+
+# Optional: Network timeouts
+timeouts:
+  api_request: 5s
+  total_execution: 10s
+
+# Optional: Logging configuration
+logging:
+  level: "INFO"     # ERROR, WARN, INFO, DEBUG
+  format: "text"    # text or json
