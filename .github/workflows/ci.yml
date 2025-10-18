@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main, 001-pfsense-dhcp-updater ]
+    branches: [ master ]
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
 
 jobs:
   lint:
